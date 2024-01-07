@@ -1,9 +1,15 @@
-// eslint-disable-next-line no-unused-vars
-import React, { useState } from "react";
+import { useState } from "react";
 import { Row, Col, Form, Button, Container } from "react-bootstrap";
-import "./test.css";
 
-const YourComponent = () => {
+//fungsi utama dari komponen konversi
+export default function CurrencyConverter() {
+  //variabel untuk menampung nilai value dari pecahan mata uang
+  const [inputValues, setInputValues] = useState([[]]);
+
+  //variabel untuk memunculkan hasil konversi
+  const [showResultTable, setShowResultTable] = useState(false);
+
+  //variabel yang menampung value untuk list di opsi pemilihan mata uang
   const [currencies, setCurrencies] = useState([
     "USD",
     "AUD",
@@ -18,6 +24,7 @@ const YourComponent = () => {
     "IDR",
   ]);
 
+  //variabel yang menampung pecahan dari masing masing mata uang
   const currencyDenominationsMap = {
     USD: [100, 50, 20, 10, 5, 1],
     AUD: [100, 50, 20, 10, 5, 2, 1],
@@ -32,80 +39,8 @@ const YourComponent = () => {
     KRW: [50000, 10000, 5000, 1000, 500, 100, 50, 10],
   };
 
-  const [conversionData, setConversionData] = useState([
-    { fromCurrency: "", toCurrency: "", denominations: [] },
-  ]);
-
-  const [inputValues, setInputValues] = useState([[]]);
-
-  const handleFromCurrencyChange = (index, value) => {
-    const updatedData = [...conversionData];
-    updatedData[index].fromCurrency = value;
-    updatedData[index].denominations = currencyDenominationsMap[value] || [];
-    setConversionData(updatedData);
-
-    // Update inputValues with empty values for each denomination in the updated row
-    const updatedValues = [...inputValues];
-    updatedValues[index] = Array(updatedData[index].denominations.length).fill(
-      ""
-    );
-    setInputValues(updatedValues);
-
-    // ... (rest of the function)
-  };
-
-  const handleInputChange = (rowIndex, denominationIndex, value) => {
-    const updatedValues = [...inputValues];
-    updatedValues[rowIndex][denominationIndex] = value;
-    setInputValues(updatedValues);
-  };
-
-  const handleToCurrencyChange = (index, value) => {
-    const updatedData = [...conversionData];
-    updatedData[index].toCurrency = value;
-    setConversionData(updatedData);
-  };
-
-  const calculateTotal = (rowIndex) => {
-    const denominations = conversionData[rowIndex].denominations;
-    const values = inputValues[rowIndex] || [];
-    const total = denominations.reduce((acc, denomination, index) => {
-      return acc + denomination * (parseFloat(values[index]) || 0);
-    }, 0);
-    return total.toFixed(2);
-  };
-
-  const handleAddRow = () => {
-    const newToCurrency =
-      conversionData.length > 0
-        ? conversionData[conversionData.length - 1].toCurrency
-        : currencies[0];
-
-    const newConversionData = {
-      fromCurrency: "",
-      toCurrency: newToCurrency,
-      denominations: [],
-    };
-
-    setConversionData([...conversionData, newConversionData]);
-
-    // Initialize inputValues with empty values for each denomination in the new row
-    const newInputValues = [
-      ...inputValues,
-      Array(newConversionData.denominations.length).fill(""),
-    ];
-    setInputValues(newInputValues);
-  };
-
-  const handleRemoveRow = (index) => {
-    const updatedData = [...conversionData];
-    updatedData.splice(index, 1);
-    setConversionData(updatedData);
-
-    const updatedValues = [...inputValues];
-    updatedValues.splice(index, 1);
-    setInputValues(updatedValues);
-  };
+  /*variabel bertipe object untuk menampung exchange rate masing masing pecahan
+  exchange rates berikut berdasarkan update terakhir pada tanggal 29 desember 2023*/
   const [exchangeRates, setExchangeRates] = useState({
     USD: {
       EUR: 0.85,
@@ -241,14 +176,89 @@ const YourComponent = () => {
     },
   });
 
+  //variabel yang menampung data konversi berupa objek yaitu pecahan mata uang asal, pecahan mata uang tujuan beserta dengan pecahan nilai yang berlaku
+  const [conversionData, setConversionData] = useState([
+    { fromCurrency: "", toCurrency: "", denominations: [] }, //variabel ini berstruktur data array of objek, yang mana atribut di dalamnya yaitu ada konversi asal, tujuan konversi dan juga pecahan mata uang yang berlaku di konversi
+  ]);
+
+  //variabel yang berfungsi untuk mengupdate value dari array konversi data, mulai dari konversi asal hingga pecahan mata uang yang berlaku
+  const handleFromCurrencyChange = (index, value) => {
+    const updatedData = [...conversionData];
+    updatedData[index].fromCurrency = value;
+    updatedData[index].denominations = currencyDenominationsMap[value] || []; //update akan dilakukan ketika user melakukan atau memberikan event pada tombol from currency berikut
+    setConversionData(updatedData);
+
+    // mengupdate input value / kolom value kosong ketika tambah pecahan yang baru
+    const updatedValues = [...inputValues];
+    updatedValues[index] = Array(updatedData[index].denominations.length).fill(
+      ""
+    );
+    setInputValues(updatedValues);
+  };
+
+  //input jumlah pecahan uang
+  const handleInputChange = (rowIndex, denominationIndex, value) => {
+    const updatedValues = [...inputValues];
+    updatedValues[rowIndex][denominationIndex] = value;
+    setInputValues(updatedValues);
+  };
+
+  //mengupdate variabel konversi mata uang tujuan
+  const handleToCurrencyChange = (index, value) => {
+    const updatedData = [...conversionData];
+    updatedData[index].toCurrency = value;
+    setConversionData(updatedData);
+  };
+
+  //melakukan kalkulasi masing-masing pecahan mata uang yang diinputkan
+  const calculateTotal = (rowIndex) => {
+    const denominations = conversionData[rowIndex].denominations;
+    const values = inputValues[rowIndex] || [];
+    const total = denominations.reduce((accumulation, denomination, index) => {
+      //
+      return accumulation + denomination * (parseFloat(values[index]) || 0);
+    }, 0);
+    return total.toFixed(2);
+  };
+
+  //variabel untuk tambah baris
+  const handleAddRow = () => {
+    const newToCurrency =
+      conversionData.length > 0
+        ? conversionData[conversionData.length - 1].toCurrency //mengambil value dari tujuan konversi untuk digunakan di konversi data ke-dua dan seterusnya
+        : currencies[0];
+
+    const newConversionData = {
+      fromCurrency: "",
+      toCurrency: newToCurrency,
+      denominations: [],
+    };
+
+    setConversionData([...conversionData, newConversionData]);
+
+    //menginisialisasi input value dengan nilai kosong untuk masing masing pecahan di baris yang baru
+    const newInputValues = [
+      ...inputValues,
+      Array(newConversionData.denominations.length).fill(""), //input values disediakan string kosong
+    ];
+    setInputValues(newInputValues);
+  };
+
+  //variabel untuk menghapus baris sekaligus menghapus index paling terakhir dari pecahan mata uang
+  const handleRemoveRow = (index) => {
+    const updatedData = [...conversionData];
+    updatedData.splice(index, 1);
+    setConversionData(updatedData);
+
+    const updatedValues = [...inputValues];
+    updatedValues.splice(index, 1);
+    setInputValues(updatedValues);
+  };
+
+  //variabel untuk mengkalkulasi konversi mata uang untuk keperluan total konversi
   const calculateConvercy = (index) => {
     const fromCurrency = conversionData[index].fromCurrency;
     const toCurrency = conversionData[index].toCurrency;
-
-    if (fromCurrency === toCurrency) {
-      // Jika mata uang asal dan tujuan sama, tidak perlu konversi
-      return calculateTotal(index);
-    }
 
     // Ambil nilai tukar dari exchangeRates
     const exchangeRate =
@@ -256,54 +266,47 @@ const YourComponent = () => {
         ? exchangeRates[fromCurrency][toCurrency]
         : 1.0;
 
-    // Simpan nilai tukar dalam sebuah array
-    const exchangeRateArray = [exchangeRate];
-
     // Kalikan total dengan nilai tukar
-    const convertedTotal = calculateTotal(index) * exchangeRateArray[0];
-
+    const convertedTotal = calculateTotal(index) * exchangeRate;
     return convertedTotal.toFixed(2);
   };
 
+  //melakukan kalkulasi total konversi yang dihasilkan
   const calculateTotalConvertedAmount = () => {
     let totalConvertedAmount = 0;
 
     conversionData.forEach((item, index) => {
+      //perulangan dari setiap elemen yang ada di konversi data (terutama untuk konversi yang lebih dari 1 mata uang asal)
       totalConvertedAmount += parseFloat(calculateConvercy(index)) || 0;
     });
 
     return totalConvertedAmount.toFixed(2);
   };
 
-  const [showResultTable, setShowResultTable] = useState(false);
-
-  const formatBreakdown = (total, targetCurrency) => {
+  //fungsi untuuk melakukan pemecahan ke masing-masing nominal yang berlaku
+  const greedyBreakdown = (total, targetCurrency) => {
     let remainingAmount = total;
 
     const counts = currencyDenominationsMap[targetCurrency].map(
       (denomination) => {
-        const count = Math.floor(remainingAmount / denomination);
-        remainingAmount = remainingAmount % denomination;
+        const count = Math.floor(remainingAmount / denomination); //dimulai dari pembagian dengan pembulatan kebawah
+        remainingAmount = remainingAmount % denomination; //update nilai remaining untuk digunakan di pengecekan berikutnya
         return count;
       }
     );
 
-    // Sesuaikan format breakdown sesuai kebutuhan
+    //result disini untuk menampung hasil nominal pecahan sesuai dengan nominal pecahannya masing-masing
     let result = "";
     counts.forEach((count, index) => {
       result += `${currencyDenominationsMap[targetCurrency][index]} x ${count}, `;
     });
 
-    // Hapus koma terakhir
-    return result.slice(0, -2);
+    return { result, remainingAmount };
   };
 
-  const calculateRemainder = (total) => {
-    // Mengembalikan sisa uang setelah breakdown
-    return (total % 1).toFixed(2) * 100;
-  };
   return (
     <>
+      {/* container untuk tabel input pemilihan mata uang */}
       <Container className="tabel-data-konversi text-align-center">
         <h1>Konversi Mata Uang Anda.</h1>
         {conversionData.map((item, index) => (
@@ -321,7 +324,7 @@ const YourComponent = () => {
                 }
               >
                 <option value="" disabled>
-                  {}
+                  {"Pecahan Mata Uang Asal"}
                 </option>
                 {currencies.map((currency) => (
                   <option key={currency} value={currency}>
@@ -353,7 +356,11 @@ const YourComponent = () => {
               </Form.Select>
             </Col>
             <Col md={12}>
-              <Button variant="danger" onClick={() => handleRemoveRow(index)}>
+              <Button
+                className="mb-2"
+                variant="danger"
+                onClick={() => handleRemoveRow(index)}
+              >
                 Hapus Data Konversi
               </Button>
             </Col>
@@ -361,14 +368,14 @@ const YourComponent = () => {
         ))}
         <Row className="text-center">
           <Col md={12}>
-            <Button variant="primary" onClick={handleAddRow}>
+            <Button className="mt-4" variant="primary" onClick={handleAddRow}>
               Tambah Data Konversi
             </Button>
           </Col>
         </Row>
       </Container>
 
-      <Container className="tabel-input-uang">
+      <Container className="tabel-input-uang mt-5">
         <h2>Input Jumlah Mata Uang yang Dimiliki: </h2>
         {conversionData.map((item, index) => (
           <Row
@@ -378,8 +385,7 @@ const YourComponent = () => {
             className="text-center"
           >
             <Col md={12}>
-              Konversi {item.fromCurrency} ke {item.toCurrency}
-              <h3>Pecahan Mata Uang:</h3>
+              <h3 className="my-3">Pecahan Mata Uang: {item.fromCurrency}</h3>
             </Col>
             <Col md={12} className="d-flex flex-wrap justify-content-center">
               {item.denominations.map((denomination, dIndex) => (
@@ -396,13 +402,17 @@ const YourComponent = () => {
               ))}
             </Col>
             <Col md={12}>
-              <p>Total: {calculateTotal(index)}</p>
+              <p className="border bolder">Total: {calculateTotal(index)}</p>
             </Col>
           </Row>
         ))}
         <Row className="text-center">
           <Col md={12}>
-            <Button variant="success" onClick={() => setShowResultTable(true)}>
+            <Button
+              className="mt-4"
+              variant="success"
+              onClick={() => setShowResultTable(true)}
+            >
               Konversi
             </Button>
           </Col>
@@ -420,28 +430,38 @@ const YourComponent = () => {
               className="text-center"
             >
               <Col md={12}>
-                Konversi {item.fromCurrency} ke {item.toCurrency}
+                <h3 className="my-3">
+                  Konversi Mata Uang ke {item.fromCurrency} ke {item.toCurrency}
+                </h3>
                 <p>
-                  Total: {calculateTotal(index)} {item.toCurrency}
+                  Total: {calculateTotal(index)} {item.fromCurrency}
                 </p>
-                <p>
+                <strong>
                   Konversi: {calculateConvercy(index)} {item.toCurrency}
-                </p>
+                </strong>
               </Col>
             </Row>
           ))}
-          <Row>
+          <Row style={{ border: "1px solid black" }} className="mb-5">
             <Col md={12}>
-              <p>Jumlah Uang Pecahan Anda: {calculateTotalConvertedAmount()}</p>
-              <p>
-                Breakdown:{" "}
-                {formatBreakdown(
+              <h4 className="text-center mt-3">
+                Total Uang Pecahan Anda: {calculateTotalConvertedAmount()}
+              </h4>
+              <p className="text-center">
+                Hasil Pembagian:{" "}
+                {
+                  greedyBreakdown(
+                    calculateTotalConvertedAmount(),
+                    conversionData[0].toCurrency
+                  ).result
+                }
+              </p>
+              <p className="text-center">
+                Sisa Uang:{" "}
+                {greedyBreakdown(
                   calculateTotalConvertedAmount(),
                   conversionData[0].toCurrency
-                )}
-              </p>
-              <p>
-                Sisa Uang: {calculateRemainder(calculateTotalConvertedAmount())}
+                ).remainingAmount.toFixed(2)}
               </p>
             </Col>
           </Row>
@@ -449,6 +469,4 @@ const YourComponent = () => {
       )}
     </>
   );
-};
-
-export default YourComponent;
+}
